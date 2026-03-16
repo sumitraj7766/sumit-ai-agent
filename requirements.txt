@@ -1,0 +1,5 @@
+streamlit
+ollama
+duckduckgo-search
+speechrecognition
+pyttsx3
