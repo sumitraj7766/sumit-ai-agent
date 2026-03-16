@@ -2,59 +2,67 @@ import streamlit as st
 from groq import Groq
 import os
 
-# Page config
 st.set_page_config(page_title="Sumit AI", page_icon="🤖")
 
 st.title("🤖 Sumit AI Assistant")
 
-# API key from Streamlit secrets
-client = Groq(
-    api_key=os.environ.get("GROQ_API_KEY")
-)
+# Load API key
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Sidebar
 st.sidebar.title("⚙️ Settings")
 
 model = st.sidebar.selectbox(
     "Model",
-    ["llama3-8b-8192", "mixtral-8x7b-32768", "llama3-70b-8192"]
+    ["llama3-8b-8192", "mixtral-8x7b-32768"]
 )
 
-# Session memory
+# Chat memory
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat history
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+# Show chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
 
 # User input
-prompt = st.chat_input("Ask something...")
+prompt = st.chat_input("Ask anything...")
 
 if prompt:
-    # user message
-    st.session_state.messages.append(
-        {"role": "user", "content": prompt}
-    )
+
+    # Add user message
+    st.session_state.messages.append({
+        "role": "user",
+        "content": prompt
+    })
 
     with st.chat_message("user"):
         st.write(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("Typing..."):
+
+        with st.spinner("Thinking..."):
+
+            # SAFE messages format
+            msgs = []
+            for m in st.session_state.messages:
+                msgs.append({
+                    "role": m["role"],
+                    "content": str(m["content"])
+                })
 
             response = client.chat.completions.create(
                 model=model,
-                messages=st.session_state.messages,
-                temperature=0.7,
+                messages=msgs,
                 max_tokens=1024
             )
 
             reply = response.choices[0].message.content
+
             st.write(reply)
 
-    # save AI reply
-    st.session_state.messages.append(
-        {"role": "assistant", "content": reply}
-    )
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": reply
+    })
