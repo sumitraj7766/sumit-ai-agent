@@ -1,115 +1,101 @@
 import streamlit as st
-import ollama
+from groq import Groq
+import os
 import time
 
-st.set_page_config(page_title="sumit AI", page_icon="🤖", layout="wide")
 
-# -------- Custom CSS --------
+
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(
+    page_title="Sumit AI Assistant",
+    page_icon="🤖",
+    layout="wide"
+)
+
+# ---------------- CUSTOM CSS ----------------
 st.markdown("""
 <style>
-body {
-background: linear-gradient(135deg,#0f172a,#1e293b,#020617);
-color:white;
+.stApp {
+    background: linear-gradient(135deg,#1f1c2c,#928dab);
 }
 
-.stChatMessage {
-border-radius:15px;
-padding:10px;
-margin-bottom:10px;
+.chat-bubble-user {
+    background:#4CAF50;
+    padding:10px;
+    border-radius:10px;
+    color:white;
 }
 
-.user-bubble {
-background:#2563eb;
-padding:10px;
-border-radius:12px;
-color:white;
+.chat-bubble-ai {
+    background:#333;
+    padding:10px;
+    border-radius:10px;
+    color:white;
 }
-
-.ai-bubble {
-background:#334155;
-padding:10px;
-border-radius:12px;
-color:white;
-}
-
-.sidebar-title {
-font-size:22px;
-font-weight:bold;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
+# ---------------- SIDEBAR ----------------
+st.sidebar.title("⚙️ Settings")
 
-# -------- Sidebar --------
-with st.sidebar:
-    st.markdown('<div class="sidebar-title">⚙️ Settings</div>', unsafe_allow_html=True)
+model = st.sidebar.selectbox(
+    "Model",
+    ["llama3-8b-8192","mixtral-8x7b-32768","gemma-7b-it"]
+)
 
-    model = st.selectbox(
-        "Model",
-        ["phi3","tinyllama"]
-    )
+if st.sidebar.button("Clear Chat"):
+    st.session_state.messages = []
 
-    if st.button("🗑 Clear Chat"):
-        st.session_state.messages = []
-
-    st.markdown("---")
-    st.markdown("### 💬 Chat History")
-
-    if "messages" in st.session_state:
-        for i,m in enumerate(st.session_state.messages):
-            if m["role"]=="user":
-                st.write(f"🧑 {m['content'][:30]}...")
+# ---------------- API CLIENT ----------------
 
 
-# -------- Title --------
-st.title("🤖 sumit AI Assistant")
 
-# -------- Memory --------
+client = Groq(api_key=os.environ["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"])
+
+# ---------------- CHAT HISTORY ----------------
 if "messages" not in st.session_state:
-    st.session_state.messages=[]
+    st.session_state.messages = []
 
+st.title("🤖 Sumit AI Assistant")
 
-# -------- Chat history --------
+# ---------------- DISPLAY MESSAGES ----------------
 for msg in st.session_state.messages:
-    avatar="🧑" if msg["role"]=="user" else "🤖"
-    with st.chat_message(msg["role"], avatar=avatar):
-        st.write(msg["content"])
+    if msg["role"] == "user":
+        with st.chat_message("user"):
+            st.markdown(msg["content"])
+    else:
+        with st.chat_message("assistant"):
+            st.markdown(msg["content"])
 
-
-# -------- Input --------
+# ---------------- USER INPUT ----------------
 prompt = st.chat_input("Ask anything...")
 
 if prompt:
-
     st.session_state.messages.append(
-        {"role":"user","content":prompt}
+        {"role": "user", "content": prompt}
     )
 
-    with st.chat_message("user",avatar="🧑"):
-        st.write(prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        message_placeholder.markdown("Typing...")
 
-    with st.chat_message("assistant",avatar="🤖"):
-
-        placeholder = st.empty()
-
-        placeholder.write("Typing...")
-
-        response = ollama.chat(
+        response = client.chat.completions.create(
             model=model,
             messages=st.session_state.messages
         )
 
-        reply = response["message"]["content"]
+        reply = response.choices[0].message.content
 
-        text=""
-
+        # typing animation
+        full_text = ""
         for char in reply:
-            text+=char
-            placeholder.write(text)
+            full_text += char
+            message_placeholder.markdown(full_text)
             time.sleep(0.01)
 
     st.session_state.messages.append(
-        {"role":"assistant","content":reply}
+        {"role": "assistant", "content": reply}
     )
