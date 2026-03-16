@@ -38,7 +38,8 @@ st.sidebar.title("⚙️ Settings")
 
 model = st.sidebar.selectbox(
     "Model",
-    ["llama3-8b-8192","mixtral-8x7b-32768","gemma-7b-it"]
+    ["llama3-8b-8192","mixtral-8x7b-32768","llama3-70b-8192"]
+
 )
 
 if st.sidebar.button("Clear Chat"):
