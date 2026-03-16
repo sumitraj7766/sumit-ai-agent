@@ -3,8 +3,6 @@ from groq import Groq
 import os
 import time
 
-
-
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Sumit AI Assistant",
@@ -12,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- CUSTOM CSS ----------------
+# ---------------- CSS ----------------
 st.markdown("""
 <style>
 .stApp {
@@ -46,11 +44,10 @@ model = st.sidebar.selectbox(
 if st.sidebar.button("Clear Chat"):
     st.session_state.messages = []
 
-# ---------------- API CLIENT ----------------
-
-
-
-client = Groq(api_key=os.environ["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"])
+# ---------------- GROQ CLIENT ----------------
+client = Groq(
+    api_key=os.environ.get("GROQ_API_KEY")
+)
 
 # ---------------- CHAT HISTORY ----------------
 if "messages" not in st.session_state:
@@ -60,25 +57,24 @@ st.title("🤖 Sumit AI Assistant")
 
 # ---------------- DISPLAY MESSAGES ----------------
 for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        with st.chat_message("user"):
-            st.markdown(msg["content"])
-    else:
-        with st.chat_message("assistant"):
-            st.markdown(msg["content"])
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
 # ---------------- USER INPUT ----------------
-prompt = st.chat_input("Ask anything...")
+prompt = st.chat_input("Ask something...")
 
 if prompt:
-    st.session_state.messages.append(
-        {"role": "user", "content": prompt}
-    )
+
+    st.session_state.messages.append({
+        "role": "user",
+        "content": prompt
+    })
 
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
+
         message_placeholder = st.empty()
         message_placeholder.markdown("Typing...")
 
@@ -96,6 +92,7 @@ if prompt:
             message_placeholder.markdown(full_text)
             time.sleep(0.01)
 
-    st.session_state.messages.append(
-        {"role": "assistant", "content": reply}
-    )
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": reply
+    })
